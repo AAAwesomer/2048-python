@@ -2,7 +2,9 @@ import random
 from tkinter import Frame, Label, CENTER
 
 import logic
+import plai
 import constants as c
+import copy
 
 
 class GameGrid(Frame):
@@ -48,14 +50,12 @@ class GameGrid(Frame):
 
             self.grid_cells.append(grid_row)
 
-    def gen(self):
-        return random.randint(0, c.GRID_LEN - 1)
-
     def init_matrix(self):
         self.matrix = logic.new_game(4)
-        self.history_matrixs = list()
-        self.matrix = logic.add_two(self.matrix)
-        self.matrix = logic.add_two(self.matrix)
+        self.last_matrix = list()
+        self.last_generated = list()
+        self.generate_next()
+        self.generate_next()
 
     def update_grid_cells(self):
         for i in range(c.GRID_LEN):
@@ -68,22 +68,25 @@ class GameGrid(Frame):
                     self.grid_cells[i][j].configure(text=str(
                         new_number), bg=c.BACKGROUND_COLOR_DICT[new_number],
                         fg=c.CELL_COLOR_DICT[new_number])
+
+        print(plai.pos_score(self.matrix))
         self.update_idletasks()
 
     def key_down(self, event):
         key = repr(event.char)
-        if key == c.KEY_BACK and len(self.history_matrixs) > 1:
-            self.matrix = self.history_matrixs.pop()
+        if key == c.KEY_BACK and len(self.last_matrix) > 0:
+            self.matrix = copy.deepcopy(self.last_matrix)
+            self.last_matrix = None
             self.update_grid_cells()
-            print('back on step total step:', len(self.history_matrixs))
         elif key in self.commands:
-            self.matrix, done = self.commands[repr(event.char)](self.matrix)
+            new_matrix, done = self.commands[repr(event.char)](self.matrix)
+            print(done)
             if done:
-                self.matrix = logic.add_two(self.matrix)
-                # record last move
-                self.history_matrixs.append(self.matrix)
+                index = self.last_generated if self.last_matrix is None else None
+                self.last_matrix = copy.deepcopy(self.matrix)
+                self.matrix = new_matrix
+                self.last_generated = self.generate_next(index)
                 self.update_grid_cells()
-                done = False
                 if logic.game_state(self.matrix) == 'win':
                     self.grid_cells[1][1].configure(
                         text="You", bg=c.BACKGROUND_COLOR_CELL_EMPTY)
@@ -95,11 +98,16 @@ class GameGrid(Frame):
                     self.grid_cells[1][2].configure(
                         text="Lose!", bg=c.BACKGROUND_COLOR_CELL_EMPTY)
 
-    def generate_next(self):
-        index = (self.gen(), self.gen())
+    def _gen(self):
+        return random.randint(0, c.GRID_LEN - 1)
+
+    def generate_next(self, index=None):
+        print(index)
+        index = (self._gen(), self._gen()) if index is None else index
         while self.matrix[index[0]][index[1]] != 0:
-            index = (self.gen(), self.gen())
+            index = (self._gen(), self._gen())
         self.matrix[index[0]][index[1]] = 2
+        return index[0], index[1]
 
 
 gamegrid = GameGrid()
