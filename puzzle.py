@@ -68,8 +68,6 @@ class GameGrid(Frame):
                     self.grid_cells[i][j].configure(text=str(
                         new_number), bg=c.BACKGROUND_COLOR_DICT[new_number],
                         fg=c.CELL_COLOR_DICT[new_number])
-
-        print(plai.pos_score(self.matrix))
         self.update_idletasks()
 
     def key_down(self, event):
@@ -80,7 +78,6 @@ class GameGrid(Frame):
             self.update_grid_cells()
         elif key in self.commands:
             new_matrix, done = self.commands[repr(event.char)](self.matrix)
-            print(done)
             if done:
                 index = self.last_generated if self.last_matrix is None else None
                 self.last_matrix = copy.deepcopy(self.matrix)
@@ -102,7 +99,6 @@ class GameGrid(Frame):
         return random.randint(0, c.GRID_LEN - 1)
 
     def generate_next(self, index=None):
-        print(index)
         index = (self._gen(), self._gen()) if index is None else index
         while self.matrix[index[0]][index[1]] != 0:
             index = (self._gen(), self._gen())
